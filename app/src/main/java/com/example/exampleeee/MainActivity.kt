@@ -1,216 +1,188 @@
 package com.example.exampleeee
 
-import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.DrawableRes
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.Image
-import com.example.exampleeee.ui.theme.ExampleeeeTheme
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.example.exampleeee.ui.theme.Shapes
-import com.google.accompanist.pager.*
-import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.HiltAndroidApp
+import com.example.exampleeee.ui.theme.ExampleeeeTheme
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionRequired
+import com.google.accompanist.permissions.rememberPermissionState
 
-@ExperimentalAnimationApi
-@ExperimentalPagerApi
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             ExampleeeeTheme {
+                AskPer()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun AskPer(){
+
+    val cameraPermissionState = rememberPermissionState(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+
+    PermissionRequired(
+        permissionState = cameraPermissionState,
+        permissionNotGrantedContent = {
+            Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
+                Text(text="Enable camera permission")
+            }
+        },
+        permissionNotAvailableContent = {
+            Text(text="please enable camera functionalty from the settings")
+        }
+    ) {
+        Text(text="granded permission, OK")
+    }
+}
+
+
+
+/**
+import android.app.Activity
+import android.content.Intent
+import android.os.Bundle
+import android.provider.Settings.Global.getString
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.exampleeee.ui.theme.ExampleeeeTheme
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.Task
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+
+class MainActivity : ComponentActivity() {
+    val auth = Firebase.auth
+    val db = Firebase.firestore
+    var startScreen = "auth_screen"
+
+    override fun onStart() {
+        super.onStart()
+        val currentUser = auth.currentUser
+        if(currentUser != null){
+            startScreen = "inside_screen"
+        }
+    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            ExampleeeeTheme {
                 val navController = rememberNavController()
-                SetUpNavGraph(navController = navController)
+                NavHost(
+                    navController = navController,
+                    startDestination = startScreen
+                ){
+                    composable ("auth_screen"){ AuthScreen(navController=navController)}
+                    composable ("inside_screen"){ InsideScreen(navController=navController)}
+                }
+
             }
         }
     }
-}
 
-@HiltAndroidApp
-class MyApplication : Application()
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
 
-sealed class Screen(val route: String){
-    object Welcome : Screen(route = "welcome_screen")
-    object Home : Screen(route = "home_screen")
-}
+        if (requestCode == 1){
+            val task : Task<GoogleSignInAccount> = GoogleSignIn.getSignedInAccountFromIntent(data)
+            try {
+                val account : GoogleSignInAccount? = task.getResult(ApiException::class.java)
+                account?.idToken.let{ token->
+                    var credential = GoogleAuthProvider.getCredential(token, null)
+                    auth.signInWithCredential(credential).addOnCompleteListener { task->
+                        if (task.isSuccessful){
+                            val user = auth.currentUser
+                            val userUid = user.uid
+                            val userEmail = user!!.email
+                            val userPhoto = user!!.photoUrl
+                            val
+                            db.collection("User").document(userUid).add
 
-@ExperimentalAnimationApi
-@ExperimentalPagerApi
-@Composable
-fun SetUpNavGraph(
-    navController : NavHostController
-){
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Welcome.route
-    ) {
-        composable(route = Screen.Welcome.route) {
-            WelcomScreen(navController = navController)
-        }
-        composable(route = Screen.Home.route) {
-            HomeScreen()
-        }
-    }
-}
-
-@ExperimentalAnimationApi
-@ExperimentalPagerApi
-@Composable
-fun WelcomScreen(
-    navController: NavHostController
-){
-    val pages = listOf(
-        OnBoardingPage.First,
-        OnBoardingPage.Second,
-        OnBoardingPage.Third
-    )
-
-    val pagerState = rememberPagerState()
-
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        HorizontalPager(
-            modifier = Modifier.weight(10f),
-            count = 3,
-            state = pagerState,
-            verticalAlignment = Alignment.Top
-        ) { position->
-            PagerScreen(onBoardingPage = pages[position])
-        }
-        HorizontalPagerIndicator(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .weight(1f),
-            pagerState = pagerState,
-            activeColor = MaterialTheme.colors.secondary,
-            inactiveColor = MaterialTheme.colors.error,
-            indicatorShape = Shapes.large
-        )
-        FinishButton(
-            modifier = Modifier.weight(1f),
-            pagerState = pagerState
-        ) {
-            navController.popBackStack()
-            navController.navigate(Screen.Home.route)
-        }
-    }
-}
-
-@Composable
-fun PagerScreen(onBoardingPage : OnBoardingPage){
-    Column(
-        modifier = Modifier
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ){
-        Image(
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .fillMaxHeight(0.7f),
-            painter = painterResource(id = onBoardingPage.image),
-            contentDescription = "pager image"
-        )
-        Text(
-            modifier = Modifier.fillMaxWidth(),
-            text = onBoardingPage.title,
-            fontSize = MaterialTheme.typography.h4.fontSize,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 40.dp)
-                .padding(top = 20.dp),
-            text = onBoardingPage.description,
-            fontSize = MaterialTheme.typography.subtitle1.fontSize,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center
-        )
-    }
-
-}
-
-@ExperimentalAnimationApi
-@ExperimentalPagerApi
-@Composable
-fun FinishButton(
-    modifier: Modifier,
-    pagerState : PagerState,
-    onClick: () -> Unit
-){
-    Row(
-        modifier = modifier.padding(horizontal = 40.dp),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.Center
-    ){
-        AnimatedVisibility(
-            modifier = Modifier.fillMaxWidth(),
-            visible = pagerState.currentPage == 2
-        ) {
-            Button(
-                onClick = onClick,
-                colors = ButtonDefaults.buttonColors(
-                    contentColor = Color.White
-                )
-            ){
-                Text(text = "Finish")
+                        }else{
+                            Toast.makeText(this, "sucsesfail", Toast.LENGTH_LONG).show()
+                        }
+                    }.addOnFailureListener { ex->
+                        Toast.makeText(this, ex.localizedMessage, Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: ApiException) {
+                Toast.makeText(this, e.localizedMessage, Toast.LENGTH_LONG).show()
             }
         }
     }
-}
 
-sealed class OnBoardingPage(
-    @DrawableRes
-    val image : Int,
-    val title : String,
-    val description : String
-){
-    object First : OnBoardingPage(
-        image = R.drawable.ic_launcher_foreground,
-        title = "First",
-        description = "first description"
-    )
-    object Second : OnBoardingPage(
-        image = R.drawable.ic_launcher_background,
-        title = "Second",
-        description = "Second description"
-    )
-    object Third : OnBoardingPage(
-        image = R.drawable.ic_launcher_foreground,
-        title = "Third",
-        description = "Third description"
-    )
 }
 
 @Composable
-fun HomeScreen(){
-    Box(
+fun AuthScreen(navController: NavController){
+    val auth = Firebase.auth
+    val activity = (LocalContext.current) as Activity
+    Column(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ){
-        Text(
-            text ="Home",
-            fontSize = MaterialTheme.typography.h4.fontSize
-        )
+        Button(
+            onClick = {
+                val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken(getString(R.string.default_web_client_id))
+                    .requestEmail()
+                    .build()
+
+                val client = GoogleSignIn.getClient(activity, gso)
+                val signInIntent: Intent =  client.signInIntent
+                activity.startActivityForResult(signInIntent, 1)
+            }
+        ){
+            Text(text="go to inside")
+        }
     }
 }
+
+@Composable
+fun InsideScreen(navController: NavController){
+    val auth = Firebase.auth
+    Column (
+        modifier=Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text="inside")
+        Button(
+            onClick = {
+                auth.signOut()
+                navController.popBackStack()
+                navController.navigate("auth_screen")
+            }
+        ){
+            Text(text="log out")
+        }
+    }
+}
+*/
