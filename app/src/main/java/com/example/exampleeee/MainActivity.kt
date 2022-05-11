@@ -16,6 +16,7 @@ import com.example.exampleeee.ui.theme.ExampleeeeTheme
 import android.graphics.ImageDecoder
 import android.os.Build
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -28,6 +29,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import com.example.exampleeee.ui.theme.Purple500
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
+import java.util.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,11 +47,27 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun PickPhoto(){
     val context = LocalContext.current
+    val storage = Firebase.storage
     var imageUrl by remember { mutableStateOf<Uri?>(null)}
     var bitmap by remember { mutableStateOf<Bitmap?>(null)}
 
     val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()){ uri: Uri? ->
         imageUrl = uri
+
+        val uuid = UUID.randomUUID()
+        val imageName = "$uuid.jpg"
+
+        val reference = storage.reference
+        val gorselReference = reference.child("images").child(imageName)
+        gorselReference.putFile(imageUrl!!).addOnSuccessListener { task->
+            Toast.makeText(context, "done", Toast.LENGTH_LONG).show()
+            val uploadedImage = storage.reference.child("images").child(imageName).downloadUrl.addOnSuccessListener { uri->
+                val downloadUrl = uri.toString()
+                Toast.makeText(context, downloadUrl, Toast.LENGTH_LONG).show()
+            }
+        }.addOnFailureListener { ex->
+            Toast.makeText(context, ex.localizedMessage, Toast.LENGTH_LONG).show()
+        }
     }
 
     Column {
