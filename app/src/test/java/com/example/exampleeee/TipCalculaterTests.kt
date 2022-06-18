@@ -5,6 +5,7 @@ import org.junit.Test
 
 class TipCalculaterTests {
 
+
     @Test
     fun calculate_20_percent_tip_no_roundup(){
         val amount = 10.00
