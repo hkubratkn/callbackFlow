@@ -3,12 +3,15 @@ package com.example.exampleeee
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.exampleeee.ui.screen.SecondScreen
+import androidx.navigation.navArgument
+import com.example.exampleeee.ui.screen.inventory.ItemScreen
+import com.example.exampleeee.ui.screen.itemDetail.ItemDetailScreen
+import com.example.exampleeee.ui.screen.itemadd.ItemAddScreen
 import com.example.exampleeee.ui.screen.navigation.Screen
-import com.example.exampleeee.ui.screen.one.OneScreen
 import com.example.exampleeee.ui.theme.ExampleeeeTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,12 +23,20 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(
                     navController = navController,
-                    startDestination = Screen.OneS.route
+                    startDestination = Screen.ItemS.route
                 ){
-                    composable(route = Screen.OneS.route){OneScreen(navController)}
-                    composable(route = Screen.SecondS.route){SecondScreen(navController)}
+                    composable(route = Screen.ItemS.route) { ItemScreen(navController = navController)}
+                    composable(
+                        route = Screen.ItemDetailS.route + "/{id}",
+                        arguments = listOf(navArgument("id"){ type = NavType.LongType})
+                    ) {
+                        ItemDetailScreen(
+                            selectedId = it.arguments?.getLong("id") ?: -1,
+                            navController = navController
+                        )
+                    }
+                    composable(route = Screen.ItemAddS.route) { ItemAddScreen(navController = navController)}
                 }
-
             }
         }
     }

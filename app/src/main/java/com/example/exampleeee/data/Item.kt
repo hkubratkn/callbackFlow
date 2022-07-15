@@ -4,14 +4,16 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity
+@Entity(tableName = "forageable_database")
 data class Item(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    var id: Long = 0,
     @ColumnInfo(name = "name")
-    val itemName: String,
-    @ColumnInfo(name = "price")
-    val itemPrice: Double,
-    @ColumnInfo(name = "quantity")
-    val quantityInStock: Int
+    var itemName: String,
+    @ColumnInfo(name = "address")
+    var itemAddress: String,
+    @ColumnInfo(name = "in_season")
+    var itemInSeason: Boolean,
+    @ColumnInfo(name = "notes")
+    var itemNotes: String
 )

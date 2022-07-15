@@ -1,6 +1,7 @@
 package com.example.exampleeee.ui.screen.navigation
 
 sealed class Screen(val route: String){
-    object OneS: Screen(route = "one_screen")
-    object SecondS: Screen(route = "second_screen")
+    object ItemS: Screen(route = "item_screen")
+    object ItemDetailS: Screen(route = "item_detail_screen")
+    object ItemAddS: Screen(route = "item_add_screen")
 }
